@@ -5,8 +5,14 @@ import (
 	"sync"
 )
 
-var forkChans [5]chan bool
-var wg sync.WaitGroup
+type ForkRequest struct {
+    PhilosopherID int
+    Take          bool
+    Reply         chan bool
+}
+
+var forkChans [5]chan ForkRequest //array of channels for each fork
+var wg sync.WaitGroup	
 
 // This function creates goroutines for fork an philosophers
 // furthermore an array is instantiate and each fork has a channel in this array
@@ -15,7 +21,7 @@ var wg sync.WaitGroup
 func main() {
 
 	for i := 0; i < 5; i++ {
-		forkChans[i] = make(chan bool, 1) //creates a channel for each fork
+		forkChans[i] = make(chan ForkRequest) //creates a channel for each fork
 
 		go fork(i, forkChans[i]) //goroutine fork, program doesn't wait, routine runs when it can
 	}
@@ -33,63 +39,85 @@ func main() {
 
 // goroutine for 1 philosopher
 // gets an ID so we can differentiate between philosophers
-func philosopher(ID int, forkChans [5]chan bool) {
-	defer wg.Done() //do this when everything is done
+func philosopher(ID int, forkChans [5]chan ForkRequest) {
+    defer wg.Done()
 
-	first := ID            //first fork for a philosopher
-	second := (ID + 1) % 5 //second fork for a philosopher
+    first := ID
+    second := (ID + 1) % 5
 
-	//creating asymmetry and avoid deadlock
-	if ID == 2 {
-		first, second = second, first
-	}
+    if ID == 2 {
+        first, second = second, first
+    }
 
-	//a philosopher has eaten 0 times at first
-	eating := 0
+    eating := 0
 
-	for eating != 3 {
-		//creates references between philosopher and the channels of the forks
-		forkChanFirst := forkChans[first]
-		forkChanSecond := forkChans[second]
+    for eating < 3 {
 
-		var hasFork1 bool
-		var hasFork2 bool
+        reply1 := make(chan bool)
+        reply2 := make(chan bool)
 
-		select {
-		case <-forkChanFirst: // check status of first fork
-			fmt.Println("Philosopher ", ID, " has a fork.")
-			hasFork1 = true
-		default:
-			fmt.Println("Philosopher ", ID, " is thinking.") // happens if a philosopher has no forks
-			continue
-		}
+        forkChans[first] <- ForkRequest{
+            PhilosopherID: ID,
+            Take:          true,
+            Reply:         reply1,
+        }
 
-		select {
-		case <-forkChanSecond:
-			fmt.Println("Philosopher ", ID, " has another fork")
-			hasFork2 = true
-		default:
-			fmt.Println("Philosopher ", ID, " is thinking.") // happens if a philosopher has 1 or 0 forks
-			if hasFork1 {
-				forkChanFirst <- true
-			}
-			continue
-		}
+        if !<-reply1 {
+            fmt.Println("Philosopher", ID, "is thinking")
+            continue
+        }
 
-		if hasFork1 && hasFork2 {
-			eating++
-			fmt.Println("Philosopher ", ID, " is eating.") // happens if a philosopher has 2 forks
-			forkChanFirst <- true
-			forkChanSecond <- true
-		}
-	}
-	fmt.Println("Philosopher ", ID, " is done eating.") // happens if a philosopher has 1 or 0 forks
+        forkChans[second] <- ForkRequest{
+            PhilosopherID: ID,
+            Take:          true,
+            Reply:         reply2,
+        }
 
+        if !<-reply2 {
+            forkChans[first] <- ForkRequest{
+                PhilosopherID: ID,
+                Take:          false,
+            }
+
+            fmt.Println("Philosopher", ID, "is thinking")
+            continue
+        }
+
+        eating++
+        fmt.Println("Philosopher", ID, "is eating")
+
+        forkChans[first] <- ForkRequest{
+            PhilosopherID: ID,
+            Take:          false,
+        }
+
+        forkChans[second] <- ForkRequest{
+            PhilosopherID: ID,
+            Take:          false,
+        }
+    }
+
+    fmt.Println("Philosopher", ID, "is done eating")
 }
 
 // forks are its own thread
-func fork(ID int, forkChan chan bool) { //goroutine for 1 fork
-	//places the fork on the table and sends a message to the philosophers that it is free
-	forkChan <- true
-	fmt.Println("Fork ", ID, " is on the table.")
+func fork(id int, requests chan ForkRequest) {
+    available := true
+
+    for {
+        req := <-requests
+
+        if req.Take {
+            if available {
+                available = false
+                req.Reply <- true
+                fmt.Println("Fork", id, "taken by philosopher", req.PhilosopherID)
+            } else {
+                req.Reply <- false
+            }
+        } else {
+            available = true
+            fmt.Println("Fork", id, "returned by philosopher", req.PhilosopherID)
+        }
+    }
 }
