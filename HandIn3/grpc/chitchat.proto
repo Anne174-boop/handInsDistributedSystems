@@ -1,0 +1,58 @@
+//vi bruger version 3 af protocol buffers.
+syntax = "proto3";
+
+package chitchat;
+
+//hvor den generede go-kode skal importeres fra.
+//pb bliver pakkenavnet i den genererede go-kode
+option go_package = "HandIn3/grpc;pb";
+
+service ChitChat {
+
+    //klienten tilmelder sig med en forspørgsel
+    //"stream" gør at serveren løbende kan sende
+    //broadcasts tilbage gennem det åbne kald.
+    //det åbne kald er når klienten kalder Join og serveren bliver ved med at sende 
+    //beskeder tilbage, uden at klienten kalder Join igen fra (return (stream Broadcast))
+    rpc Join(JoinRequest) returns (stream Broadcast);
+
+
+    //klienten sender en chatbesked
+    //serveren retunerer et svar som en slags kvittering
+    rpc Publish(PublicRequest) return (Reply);
+
+    //her melder klienten sig ud og får et svar tilbage
+    RPC Leave(LeaveRequest) return (Reply);
+}
+
+//oplysninger som klienten sender når de tilmelder sig
+message JoinRequest{
+    string client_id =1;//deltagerens ID f.esk. "anne"
+    uint64 local_time = 2 //klientens lemport-tid ved afsendelse
+}
+
+//opslyninger som klienten sender for at poste/publicere en besked
+message PublishRequest {
+  string client_id = 1;//hvem sender
+  string content = 2;//texten
+  uint64 logical_time = 3;//lamport-tid ved afsendelse
+}
+
+//oplysninger som klienten sender når klienten forlader chatten
+message LeaveRequest {
+  string client_id = 1;//hvem forlod chatten
+  uint64 logical_time = 2;//klientens lamport-tid ved afsendelse
+}
+
+// En besked, serveren sender til alle aktive deltagere.
+// Bruges til chatbeskeder samt join- og leave-notifikationer.
+message Broadcast {
+  string client_id = 1;//deltageren som beskeden handler om
+  string content = 2;//chatteksten eller join/leave text
+  uint64 logical_time = 3;//Serverens lamport-tid for broadcastet
+}
+// Serverens svar på Publish og Leave.
+// Fejl kan returneres separat som gRPC-fejl.
+message Reply {
+  uint64 logical_time = 1; //lamport tid ved afsendelse (serverens)
+}
