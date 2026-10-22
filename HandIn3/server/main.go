@@ -177,11 +177,6 @@ func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer
 	log.Printf("component=server event=stream_closed client_id=%s", req.ClientId)
 	return nil
 }
-
-func (s *chatServer) Publish(ctx context.Context, req *pb.PublishRequest) (*pb.Reply, error) {
-	log.Printf("component=server event=publish client_id=%s content=%q", req.ClientId, req.Content)
-	return &pb.Reply{}, nil
-}
 	
 func (s *chatServer) Leave(ctx context.Context, req *pb.LeaveRequest) (*pb.Reply, error) {
 	log.Printf("component=server event=leave client_id=%s", req.ClientId)
