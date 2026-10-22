@@ -4,7 +4,7 @@ import (
 	pb "HandIn3/grpc" //beskedtyper og gRPC-funktioner genereret fra .proto
 	"log"             // skriver logbeskeder
 	"net"             //åbner en netværksport
-
+	"context"
 	"google.golang.org/grpc" // bruges til at oprette en gRPC-server
 )
 
@@ -47,4 +47,23 @@ func main() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer[pb.Broadcast]) error {
+	log.Printf("component=server event=join client_id=%s", req.ClientId)
+
+	<-stream.Context().Done()
+
+	log.Printf("component=server event=stream_closed client_id=%s", req.ClientId)
+	return nil
+}
+
+func (s *chatServer) Publish(ctx context.Context, req *pb.PublishRequest) (*pb.Reply, error) {
+	log.Printf("component=server event=publish client_id=%s content=%q", req.ClientId, req.Content)
+	return &pb.Reply{}, nil
+}
+	
+func (s *chatServer) Leave(ctx context.Context, req *pb.LeaveRequest) (*pb.Reply, error) {
+	log.Printf("component=server event=leave client_id=%s", req.ClientId)
+	return &pb.Reply{}, nil
 }
