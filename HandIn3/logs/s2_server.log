@@ -1,0 +1,6 @@
+go run ./server
+2026/10/22 17:47:36 component=server event=start port=50051
+2026/10/22 17:47:50 component=server event=join client_id=bob
+2026/10/22 17:48:47 component=server event=join client_id=anne
+2026/10/22 17:49:08 component=server event=join client_id=carl
+2026/10/22 17:50:03 component=server event=stream_closed client_id=carl
