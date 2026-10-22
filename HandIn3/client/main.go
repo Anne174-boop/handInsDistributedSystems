@@ -36,8 +36,9 @@ func main() {
 			log.Printf("component=client event=stream_ended error=%v", err)
 			return
 		}
+	
+		log.Printf("component=client event=received content=%q logical_time=%d", msg.Content, msg.LogicalTime)
 	}
-	log.Printf("component=client event=received content=%q logical_time=%d", msg.Content, msg.LogicalTime)
 
 	// call leave
 	// close connection once main has run
