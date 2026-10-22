@@ -26,7 +26,7 @@ func main() {
 	//err er den eventuelle fejl der kan opstå.
 	listener, err := net.Listen("tcp", ":50051") // åbner port 50051 så klienten kan kontaktes.
 
-	//hvis der er en fejl uskrives den og programmet sopper
+	//hvis der er en fejl udskrives den og programmet sopper
 	//f.eks. hvis porten allede er i brug
 	if err != nil { //
 		log.Fatalf("failed to listen: %v", err)
@@ -44,7 +44,7 @@ func main() {
 
 	log.Println("component=server event=start port=50051")
 
-	if err := server.Serve(listener); err != nil {
+	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }

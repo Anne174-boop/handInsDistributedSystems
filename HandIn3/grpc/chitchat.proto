@@ -19,7 +19,7 @@ service ChitChat {
 
     //klienten sender en chatbesked
     //serveren retunerer et svar som en slags kvittering
-    rpc Publish(PublicRequest) returns (Reply);
+    rpc Publish(PublishRequest) returns (Reply);
 
     //her melder klienten sig ud og får et svar tilbage
     rpc Leave(LeaveRequest) returns (Reply);
@@ -28,11 +28,11 @@ service ChitChat {
 //oplysninger som klienten sender når de tilmelder sig
 message JoinRequest{
     string client_id =1;//deltagerens ID f.esk. "anne"
-    uint64 local_time = 2; //klientens lemport-tid ved afsendelse
+    uint64 logical_time = 2; //klientens lemport-tid ved afsendelse
 }
 
-//opslyninger som klienten sender for at poste/publicere en besked
-message PublicRequest {
+//opslyninger som klienten sender for at poste/publishere en besked
+message PublishRequest {
   string client_id = 1;//hvem sender
   string content = 2;//texten
   uint64 logical_time = 3;//lamport-tid ved afsendelse
