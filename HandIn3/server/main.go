@@ -2,31 +2,43 @@ package main
 
 import (
 	pb "HandIn3/grpc" //beskedtyper og gRPC-funktioner genereret fra .proto
-	"log"             // skriver logbeskeder
-	"net"             //åbner en netværksport
+	"log"             // bruges til at håndtere kontekst i gRPC-kald
+	"net"
+	"sync" // bruges til at synkronisere adgang til deltagerlisten
 
 	"google.golang.org/grpc" // bruges til at oprette en gRPC-server
+	// bruges til at definere gRPC-fejlkoder
+	// bruges til at oprette gRPC-fejlmeddelelser
 )
 
 // En deltager med sin egen channel til udgående beskeder.
+// En deltager i chatten.
 type participant struct {
-	id       string
-	outgoing chan *pb.Broadcast //kanalen til at sende beskeder til deltageren
+	// Køen indeholder broadcasts, som endnu ikke er sendt.
+	// Hvert element er en pointer til en Broadcast-besked.
+	queue []*pb.Broadcast
+
+	// Denne channel signalerer, at der er beskeder i køen.
+	// Selve beskederne ligger i queue, ikke i denne channel.
+	ready chan struct{}
 }
 
-// pb betyder Protocol Buffers, som giver adgang til de beskedtyper
-// og pRPC funktioner som genereres fra -proto-filen.
-
-// vores chatserver, senere skal vi tilføje en deltagerlist
-// unimplementedchitchatserver giver standdard-metoder,
-// som siger "not implemented " indtil vi selv skriver join publish og leave.
+// Serverens fælles tilstand.
 type chatServer struct {
+	// Giver standardimplementeringer til RPC-metoder,
+	// som vi endnu ikke selv har implementeret.
 	pb.UnimplementedChitChatServer
 
-	//aktive deltagere i chatten, kortlagt efter deres id.
-	participants map[string]*participant //kortlægger deltager-id'er til deltagerstrukturer
+	// En mutex fungerer som en lås.
+	// Den beskytter deltagerlisten, beskedkøerne og Lamport-uret,
+	// når flere RPC-handlere kører samtidigt.
+	mu sync.Mutex
 
-	logicalTime int64 //logisk tid for at spore rækkefølgen af beskeder
+	// Kobler et klient-ID til deltagerens kø og signalchannel.
+	participants map[string]*participant
+
+	// Serverens Lamport-ur. Starter automatisk på 0.
+	logicalTime uint64
 }
 
 // her starter programmet
