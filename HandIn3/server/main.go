@@ -8,6 +8,12 @@ import (
 	"google.golang.org/grpc" // bruges til at oprette en gRPC-server
 )
 
+// En deltager med sin egen channel til udgående beskeder.
+type participant struct {
+	id       string
+	outgoing chan *pb.Broadcast //kanalen til at sende beskeder til deltageren
+}
+
 // pb betyder Protocol Buffers, som giver adgang til de beskedtyper
 // og pRPC funktioner som genereres fra -proto-filen.
 
@@ -16,6 +22,11 @@ import (
 // som siger "not implemented " indtil vi selv skriver join publish og leave.
 type chatServer struct {
 	pb.UnimplementedChitChatServer
+
+	//aktive deltagere i chatten, kortlagt efter deres id.
+	participants map[string]*participant //kortlægger deltager-id'er til deltagerstrukturer
+
+	logicalTime int64 //logisk tid for at spore rækkefølgen af beskeder
 }
 
 // her starter programmet
@@ -39,8 +50,14 @@ func main() {
 	//opretter en gRPC-server
 	grpcServer := grpc.NewServer()
 
-	//registrerer vores chatserver på gRPC-serveren
-	pb.RegisterChitChatServer(grpcServer, &chatServer{})
+	// Opret vores chatserver med en tom deltagerliste.
+	// Lamport-uret starter automatisk på 0.
+	chat := &chatServer{
+		participants: make(map[string]*participant),
+	}
+
+	// Registrér chatserveren hos gRPC.
+	pb.RegisterChitChatServer(grpcServer, chat)
 
 	log.Println("component=server event=start port=50051")
 
