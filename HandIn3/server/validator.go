@@ -1,5 +1,6 @@
 package main
 
+//unicode/utf8 bruges til at tælle Unicode-kodepunkter i en string og kontrollere, om strengen er gyldig UTF-8.
 import (
 	"fmt"
 	"unicode/utf8"

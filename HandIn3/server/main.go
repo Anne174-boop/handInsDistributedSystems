@@ -44,7 +44,7 @@ func main() {
 
 	log.Println("component=server event=start port=50051")
 
-	if err := server.Serve(listener); err != nil {
+	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
