@@ -6,7 +6,7 @@ import (
 	"log"             // bruges til at håndtere kontekst i gRPC-kald
 	"net"
 	"sync" // bruges til at synkronisere adgang til deltagerlisten
-
+	"fmt"
 	"google.golang.org/grpc"        // bruges til at oprette en gRPC-server
 	"google.golang.org/grpc/codes"  //grpc-fejlkoder
 	"google.golang.org/grpc/status" // opretter grpcfejl fra klient til server
@@ -169,10 +169,79 @@ func main() {
 	}
 }
 
+//register new clients joining
 func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer[pb.Broadcast]) error {
+	clientID := req.GetClientId()
+
+	s.mu.Lock() 	// Beskyt deltagerlisten, køerne og uret mod samtidig adgang.
+	
+	// Undgå at registrere samme klient to gange.
+    if _, exists := s.participants[clientID]; exists {
+        s.mu.Unlock()
+        return status.Error(
+            codes.AlreadyExists,
+            "client has already joined",
+        )
+    }
+
+	// register new participant before broadcasting
+	p := &participant{
+    	queue: make([]*pb.Broadcast, 0),
+    	ready: make(chan struct{}, 1),
+	}
+	s.participants[clientID] = p
+
+	// update logical_time to the clients time
+	s.receiveTime(req.GetLogicalTime())
+
+	//create join message with new logical_time
+	s.logicalTime++
+	message := &pb.Broadcast{
+		ClientId: req.GetClientId(),
+		Content: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d",
+			req.GetClientId(),
+			s.logicalTime,
+		),
+		LogicalTime: s.logicalTime,
+	}
+
+	//now send the join-message to all active participants
+	s.broadcast(message)
+
+	s.mu.Unlock()
+
 	log.Printf("component=server event=join client_id=%s", req.ClientId)
 
-	<-stream.Context().Done()
+ // Send queued broadcasts to this participant.
+    for {
+        select {
+        case <-stream.Context().Done():
+            // Client disconnected.
+            return nil
+
+        case <-p.ready:
+            // There may be multiple messages in the queue.
+            for {
+                s.mu.Lock()
+
+                if len(p.queue) == 0 {
+                    s.mu.Unlock()
+                    break
+                }
+
+                // Take the oldest message from the queue.
+                msg := p.queue[0]
+                p.queue = p.queue[1:]
+
+                s.mu.Unlock()
+
+                // Send the message to the client.
+                if err := stream.Send(msg); err != nil {
+                    return err
+                }
+            }
+        }
+    }
 
 	log.Printf("component=server event=stream_closed client_id=%s", req.ClientId)
 	return nil
