@@ -1,0 +1,5 @@
+2026/10/24 13:47:19 component=server event=start port=50051
+2026/10/24 13:47:27 component=server event=join client_id=Anne
+2026/10/24 13:47:35 component=server event=join client_id=Line
+2026/10/24 13:47:43 component=server event=join client_id=Marius
+2026/10/24 13:47:59 component=Server event=leave_broadcast_queued client_id="Anne" logical_time=11 content="Participant Anne left Chit Chat at logical time 11"

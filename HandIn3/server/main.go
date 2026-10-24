@@ -216,8 +216,13 @@ func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer
 	defer func() {
 		s.mu.Lock()
 
-		// Fjern denne deltager fra listen over aktive klienter.
-		delete(s.participants, clientID)
+		s.mu.Lock()
+
+		// Registrér afbrydelsen som en lokal hændelse.
+		s.logicalTime++
+
+		// Fjern deltageren, og broadcast leave-beskeden.
+		s.removeParticipant(clientID, p)
 
 		s.mu.Unlock()
 
@@ -264,7 +269,78 @@ func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer
 	return nil
 }
 
-func (s *chatServer) Leave(ctx context.Context, req *pb.LeaveRequest) (*pb.Reply, error) {
-	log.Printf("component=server event=leave client_id=%s", req.ClientId)
-	return &pb.Reply{}, nil
+// Fjern en deltager, og annoncér det til de resterende.
+//
+// Serverens mutex skal være låst, når metoden kaldes.
+// expected er den konkrete deltagerforbindelse, vi vil fjerne.
+func (s *chatServer) removeParticipant(
+	clientID string,
+	expected *participant,
+) {
+	// Kontrollér, at det stadig er den samme forbindelse.
+	// Det forhindrer dobbelt leave og beskytter en eventuel
+	// ny forbindelse, der bruger samme klient-ID.
+	current, exists := s.participants[clientID]
+	if !exists || current != expected {
+		return
+	}
+
+	// Fjern deltageren FØR broadcastet.
+	// Dermed modtager kun de resterende deltagere beskeden.
+	delete(s.participants, clientID)
+
+	// Leave-broadcastet er en ny afsendelseshændelse.
+	s.logicalTime++
+
+	message := &pb.Broadcast{
+		ClientId: clientID,
+		Content: fmt.Sprintf(
+			"Participant %s left Chit Chat at logical time %d",
+			clientID,
+			s.logicalTime,
+		),
+		LogicalTime: s.logicalTime,
+	}
+
+	// Læg leave-beskeden i de resterende deltageres køer.
+	s.broadcast(message)
+
+	log.Printf(
+		"component=Server event=leave_broadcast_queued client_id=%q logical_time=%d content=%q",
+		clientID,
+		message.LogicalTime,
+		message.Content,
+	)
+}
+
+// Leave kaldes, når en deltager melder sig ud.
+func (s *chatServer) Leave(
+	ctx context.Context,
+	req *pb.LeaveRequest,
+) (*pb.Reply, error) {
+	// Beskyt deltagerlisten, køerne og Lamport-uret.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Opdatér uret ved modtagelse af Leave-kaldet.
+	s.receiveTime(req.GetLogicalTime())
+
+	// Find den deltager, der ønsker at forlade chatten.
+	p, exists := s.participants[req.GetClientId()]
+	if !exists {
+		return nil, status.Error(
+			codes.NotFound,
+			"client is not an active participant",
+		)
+	}
+
+	// Fjern deltageren og send leave-beskeden til de resterende.
+	s.removeParticipant(req.GetClientId(), p)
+
+	// Kvitteringen er en ny afsendelseshændelse.
+	s.logicalTime++
+
+	return &pb.Reply{
+		LogicalTime: s.logicalTime,
+	}, nil
 }

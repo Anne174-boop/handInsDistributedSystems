@@ -59,10 +59,14 @@ func main() {
 	}
 
 	//call join
-	stream, err := client.Join(context.Background(), &pb.JoinRequest{ClientId: clientID, LogicalTime: nextTime()})
-	if err != nil { //
-		log.Fatalf("failed to join: %v", err)
-	}
+	// Gør det muligt at afslutte den åbne Join-stream.
+	joinCtx, cancelJoin := context.WithCancel(context.Background())
+	defer cancelJoin()
+
+	stream, err := client.Join(joinCtx, &pb.JoinRequest{
+		ClientId:    clientID,
+		LogicalTime: nextTime(),
+	})
 
 	// Signalerer, når vi har modtaget første broadcast.
 	// Så ved vi, at serveren har registreret klienten.
@@ -80,6 +84,40 @@ func main() {
 		// Læs én linje, hver gang brugeren trykker Enter.
 		for scanner.Scan() {
 			message := scanner.Text()
+
+			// /leave er en kommando, ikke en chatbesked.
+			if message == "/leave" {
+				// Fortæl serveren, at vi forlader chatten.
+				reply, err := client.Leave(
+					context.Background(),
+					&pb.LeaveRequest{
+						ClientId:    clientID,
+						LogicalTime: nextTime(),
+					},
+				)
+
+				if err != nil {
+					log.Printf(
+						"component=Client event=leave_failed client_id=%q error=%q",
+						clientID, err,
+					)
+					continue
+				}
+
+				// Opdatér klientens ur med serverens kvittering.
+				receiveTime(reply.GetLogicalTime())
+
+				log.Printf(
+					"component=Client event=left client_id=%q logical_time=%d",
+					clientID, reply.GetLogicalTime(),
+				)
+
+				// Luk Join-streamen, så modtagelsesløkken afsluttes.
+				cancelJoin()
+
+				// Stop input-goroutinen uden at kalde Publish.
+				return
+			}
 
 			// Send teksten og klientens nye Lamport-tid til serveren.
 			reply, err := client.Publish(

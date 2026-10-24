@@ -1,0 +1,5 @@
+2026/10/24 13:47:27 component=Client event=received client_id="Anne" content="Participant Anne joined Chit Chat at logical time 3" logical_time=3
+2026/10/24 13:47:35 component=Client event=received client_id="Anne" content="Participant Line joined Chit Chat at logical time 5" logical_time=5
+2026/10/24 13:47:43 component=Client event=received client_id="Anne" content="Participant Marius joined Chit Chat at logical time 7" logical_time=7
+2026/10/24 13:47:59 component=Client event=left client_id="Anne" logical_time=12
+2026/10/24 13:47:59 component=client event=stream_ended error=rpc error: code = Canceled desc = context canceled
