@@ -1,0 +1,7 @@
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x2 addr=0x30 pc=0x104c5bb4c]
+
+goroutine 1 [running]:
+main.main()
+	/Users/annevestbo/Desktop/Distributed systems/handInsDistributedSystems/handIn3/client/main.go:156 +0x45c
+exit status 2
