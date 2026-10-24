@@ -1,0 +1,5 @@
+2026/10/24 11:32:54 component=server event=start port=50051
+2026/10/24 11:33:12 component=server event=join client_id=Anne
+2026/10/24 11:33:23 component=server event=join client_id=Line
+2026/10/24 11:33:36 component=server event=join client_id=Marius
+2026/10/24 11:39:42 component=Server event=broadcast_queued client_id="Anne" logical_time=9 content="Hej fra Anne - test af S4"

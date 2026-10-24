@@ -3,10 +3,11 @@ package main
 import (
 	pb "HandIn3/grpc" //beskedtyper og gRPC-funktioner genereret fra .proto
 	"context"         // Oplysninger om RPC-kaldet.
-	"log"             // bruges til at håndtere kontekst i gRPC-kald
+	"fmt"
+	"log" // bruges til at håndtere kontekst i gRPC-kald
 	"net"
 	"sync" // bruges til at synkronisere adgang til deltagerlisten
-	"fmt"
+
 	"google.golang.org/grpc"        // bruges til at oprette en gRPC-server
 	"google.golang.org/grpc/codes"  //grpc-fejlkoder
 	"google.golang.org/grpc/status" // opretter grpcfejl fra klient til server
@@ -169,25 +170,25 @@ func main() {
 	}
 }
 
-//register new clients joining
+// register new clients joining
 func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer[pb.Broadcast]) error {
 	clientID := req.GetClientId()
 
-	s.mu.Lock() 	// Beskyt deltagerlisten, køerne og uret mod samtidig adgang.
-	
+	s.mu.Lock() // Beskyt deltagerlisten, køerne og uret mod samtidig adgang.
+
 	// Undgå at registrere samme klient to gange.
-    if _, exists := s.participants[clientID]; exists {
-        s.mu.Unlock()
-        return status.Error(
-            codes.AlreadyExists,
-            "client has already joined",
-        )
-    }
+	if _, exists := s.participants[clientID]; exists {
+		s.mu.Unlock()
+		return status.Error(
+			codes.AlreadyExists,
+			"client has already joined",
+		)
+	}
 
 	// register new participant before broadcasting
 	p := &participant{
-    	queue: make([]*pb.Broadcast, 0),
-    	ready: make(chan struct{}, 1),
+		queue: make([]*pb.Broadcast, 0),
+		ready: make(chan struct{}, 1),
 	}
 	s.participants[clientID] = p
 
@@ -210,43 +211,59 @@ func (s *chatServer) Join(req *pb.JoinRequest, stream grpc.ServerStreamingServer
 
 	s.mu.Unlock()
 
+	// Kør oprydningen, når Join afsluttes,
+	// fx ved afbrudt forbindelse eller fejl under afsendelse.
+	defer func() {
+		s.mu.Lock()
+
+		// Fjern denne deltager fra listen over aktive klienter.
+		delete(s.participants, clientID)
+
+		s.mu.Unlock()
+
+		log.Printf(
+			"component=Server event=client_disconnected client_id=%q",
+			clientID,
+		)
+	}()
+
 	log.Printf("component=server event=join client_id=%s", req.ClientId)
 
- // Send queued broadcasts to this participant.
-    for {
-        select {
-        case <-stream.Context().Done():
-            // Client disconnected.
-            return nil
+	// Send queued broadcasts to this participant.
+	for {
+		select {
+		case <-stream.Context().Done():
+			// Client disconnected.
+			return nil
 
-        case <-p.ready:
-            // There may be multiple messages in the queue.
-            for {
-                s.mu.Lock()
+		case <-p.ready:
+			// There may be multiple messages in the queue.
+			for {
+				s.mu.Lock()
 
-                if len(p.queue) == 0 {
-                    s.mu.Unlock()
-                    break
-                }
+				if len(p.queue) == 0 {
+					s.mu.Unlock()
+					break
+				}
 
-                // Take the oldest message from the queue.
-                msg := p.queue[0]
-                p.queue = p.queue[1:]
+				// Take the oldest message from the queue.
+				msg := p.queue[0]
+				p.queue = p.queue[1:]
 
-                s.mu.Unlock()
+				s.mu.Unlock()
 
-                // Send the message to the client.
-                if err := stream.Send(msg); err != nil {
-                    return err
-                }
-            }
-        }
-    }
+				// Send the message to the client.
+				if err := stream.Send(msg); err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	log.Printf("component=server event=stream_closed client_id=%s", req.ClientId)
 	return nil
 }
-	
+
 func (s *chatServer) Leave(ctx context.Context, req *pb.LeaveRequest) (*pb.Reply, error) {
 	log.Printf("component=server event=leave client_id=%s", req.ClientId)
 	return &pb.Reply{}, nil
