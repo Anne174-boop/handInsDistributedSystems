@@ -1,0 +1,6 @@
+=== RUN   TestValidateMessage
+Message exceeds 128 characters.
+Message contains invalid UTF-8 characters.
+--- PASS: TestValidateMessage (0.00s)
+PASS
+ok  	HandIn3/server	0.272s
