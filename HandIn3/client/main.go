@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.SetOutput(os.Stdout) // Logbeskeder skrives til terminalen.
 	//Kontrollér, at brugeren har angivet et klient-ID.
 	if len(os.Args) < 2 {
 		log.Fatal("Usage: go run ./client <client-id>")

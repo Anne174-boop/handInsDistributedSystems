@@ -7,6 +7,7 @@ import (
 	"log" // bruges til at håndtere kontekst i gRPC-kald
 	"net"
 	"sync" // bruges til at synkronisere adgang til deltagerlisten
+	"os"
 
 	"google.golang.org/grpc"        // bruges til at oprette en gRPC-server
 	"google.golang.org/grpc/codes"  //grpc-fejlkoder
@@ -136,6 +137,7 @@ func (s *chatServer) Publish(
 // her starter programmet
 
 func main() {
+	log.SetOutput(os.Stdout)
 	//åbn porten så klienten kan blive tilsluttet
 	//listener er den åbne netværkslytter (Idk)
 	//err er den eventuelle fejl der kan opstå.
