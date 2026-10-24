@@ -4,3 +4,6 @@
 2026/10/24 12:15:47 component=server event=join client_id=Line
 2026/10/24 12:15:56 component=server event=join client_id=Marius
 2026/10/24 12:16:28 component=Server event=broadcast_queued client_id="Anne" logical_time=16 content="Hej fra Anne"
+2026/10/24 12:18:56 component=Server event=client_disconnected client_id="Anne"
+2026/10/24 12:18:57 component=Server event=client_disconnected client_id="Line"
+2026/10/24 12:18:57 component=Server event=client_disconnected client_id="Marius"
