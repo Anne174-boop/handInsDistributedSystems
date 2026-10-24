@@ -1,0 +1,5 @@
+2026/10/24 12:14:23 component=Client event=received client_id="Anne" content="Participant Anne joined Chit Chat at logical time 3" logical_time=3
+2026/10/24 12:14:30 component=Client event=received client_id="Anne" content="Hej fra Anne" logical_time=7
+2026/10/24 12:15:47 component=Client event=received client_id="Anne" content="Participant Line joined Chit Chat at logical time 10" logical_time=10
+2026/10/24 12:15:56 component=Client event=received client_id="Anne" content="Participant Marius joined Chit Chat at logical time 12" logical_time=12
+2026/10/24 12:16:28 component=Client event=received client_id="Anne" content="Hej fra Anne" logical_time=16

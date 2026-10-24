@@ -1,0 +1,6 @@
+2026/10/24 12:14:06 component=server event=start port=50051
+2026/10/24 12:14:23 component=server event=join client_id=Anne
+2026/10/24 12:14:30 component=Server event=broadcast_queued client_id="Anne" logical_time=7 content="Hej fra Anne"
+2026/10/24 12:15:47 component=server event=join client_id=Line
+2026/10/24 12:15:56 component=server event=join client_id=Marius
+2026/10/24 12:16:28 component=Server event=broadcast_queued client_id="Anne" logical_time=16 content="Hej fra Anne"
