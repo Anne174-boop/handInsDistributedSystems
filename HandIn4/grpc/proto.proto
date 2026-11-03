@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package HandIn4;
+option go_package = "HandIn4/grpc;pb";
+
+service HandIn4 {
+
+}
