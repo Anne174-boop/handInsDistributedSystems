@@ -1,23 +1,39 @@
 syntax = "proto3";
 
 package HandIn4;
+
+// Go-pakkens importsti og pakkenavn.
+// "handin4" matcher modulets navn i go.mod.
 option go_package = "HandIn4/grpc;pb";
+
 
 // De funktioner, som "knuderne" kan kalde hos hinanden.
 service HandIn4 {
 
+
+
+  // Anmoder en anden knude om adgang til den kritiske sektion.
+  // Svaret bekræfter kun modtagelsen — det giver ikke tilladelse.
       rpc RequestAccess (AccessRequest) returns (Acknowledgement);
     
+
+    // Giver en anden knude tilladelse til at gå ind.
+    // Dette kald kan sendes straks eller udskydes af algoritmen.
     rpc Reply (AccessReply) returns (Acknowledgement);
 }
 
 // Oplysningerne i en anmodning om adgang.
 message AccessRequest {
 
-
+    // ID på den knude, som anmoder om adgang.
+    // Hver knude skal have et unikt ID.
+    
     uint32 node_id = 1;
     
-    
+    // Anmodningens Lamport-tidsstempel — ikke et almindeligt klokkeslæt.
+    // Laveste tidsstempel har prioritet.
+    // Ved samme tidsstempel har laveste knude-ID prioritet.
+
     uint64 timestamp = 2;
 
 }
@@ -28,10 +44,16 @@ message AccessReply {
 // ID på den knude, som GIVER tilladelsen.
   uint32 node_id = 1;
 
+// Afsenderens Lamport-tid, når tilladelsen sendes.
 uint64 timestamp = 2;
 
+// ID på den knude, som FÅR tilladelsen.
 uint32 requester_id = 3;
 
+
+// Tidsstemplet fra den oprindelige anmodning.
+// Sammen med requester_id identificerer det anmodningen,
+// så tilladelsen kan knyttes til den rigtige anmodning.
 uint64 request_timestamp = 4;
 
 }
