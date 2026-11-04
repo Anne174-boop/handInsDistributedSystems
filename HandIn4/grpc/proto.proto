@@ -3,6 +3,36 @@ syntax = "proto3";
 package HandIn4;
 option go_package = "HandIn4/grpc;pb";
 
+// De funktioner, som "knuderne" kan kalde hos hinanden.
 service HandIn4 {
 
+      rpc RequestAccess (AccessRequest) returns (Acknowledgement);
+    
+    rpc Reply (AccessReply) returns (Acknowledgement);
 }
+
+// Oplysningerne i en anmodning om adgang.
+message AccessRequest {
+
+
+    uint32 node_id = 1;
+    
+    
+    uint64 timestamp = 2;
+
+}
+
+// En tilladelse til en bestemt anmodning.
+message AccessReply {
+
+// ID på den knude, som GIVER tilladelsen.
+  uint32 node_id = 1;
+
+uint64 timestamp = 2;
+
+uint32 requester_id = 3;
+
+uint64 request_timestamp = 4;
+
+}
+
