@@ -14,7 +14,7 @@ service HandIn4 {
 
   // Anmoder en anden knude om adgang til den kritiske sektion.
   // Svaret bekræfter kun modtagelsen — det giver ikke tilladelse.
-      rpc RequestAccess (AccessRequest) returns (Acknowledgement);
+    rpc RequestAccess (AccessRequest) returns (Acknowledgement);
     
 
     // Giver en anden knude tilladelse til at gå ind.
@@ -56,5 +56,11 @@ uint32 requester_id = 3;
 // så tilladelsen kan knyttes til den rigtige anmodning.
 uint64 request_timestamp = 4;
 
+}
+
+message Acknowledgement {
+    uint32 node_id = 1;
+
+    uint64 timestamp = 2;
 }
 

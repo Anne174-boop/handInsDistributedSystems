@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -20,17 +21,231 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Oplysningerne i en anmodning om adgang.
+type AccessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Timestamp     uint64                 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccessRequest) Reset() {
+	*x = AccessRequest{}
+	mi := &file_proto_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccessRequest) ProtoMessage() {}
+
+func (x *AccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccessRequest.ProtoReflect.Descriptor instead.
+func (*AccessRequest) Descriptor() ([]byte, []int) {
+	return file_proto_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AccessRequest) GetNodeId() uint32 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *AccessRequest) GetTimestamp() uint64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+// En tilladelse til en bestemt anmodning.
+type AccessReply struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID på den knude, som GIVER tilladelsen.
+	NodeId uint32 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	// Afsenderens Lamport-tid, når tilladelsen sendes.
+	Timestamp uint64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// ID på den knude, som FÅR tilladelsen.
+	RequesterId uint32 `protobuf:"varint,3,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	// Tidsstemplet fra den oprindelige anmodning.
+	// Sammen med requester_id identificerer det anmodningen,
+	// så tilladelsen kan knyttes til den rigtige anmodning.
+	RequestTimestamp uint64 `protobuf:"varint,4,opt,name=request_timestamp,json=requestTimestamp,proto3" json:"request_timestamp,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AccessReply) Reset() {
+	*x = AccessReply{}
+	mi := &file_proto_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccessReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccessReply) ProtoMessage() {}
+
+func (x *AccessReply) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccessReply.ProtoReflect.Descriptor instead.
+func (*AccessReply) Descriptor() ([]byte, []int) {
+	return file_proto_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AccessReply) GetNodeId() uint32 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *AccessReply) GetTimestamp() uint64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *AccessReply) GetRequesterId() uint32 {
+	if x != nil {
+		return x.RequesterId
+	}
+	return 0
+}
+
+func (x *AccessReply) GetRequestTimestamp() uint64 {
+	if x != nil {
+		return x.RequestTimestamp
+	}
+	return 0
+}
+
+type Acknowledgement struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        uint32                 `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Timestamp     uint64                 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Acknowledgement) Reset() {
+	*x = Acknowledgement{}
+	mi := &file_proto_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Acknowledgement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Acknowledgement) ProtoMessage() {}
+
+func (x *Acknowledgement) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Acknowledgement.ProtoReflect.Descriptor instead.
+func (*Acknowledgement) Descriptor() ([]byte, []int) {
+	return file_proto_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Acknowledgement) GetNodeId() uint32 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *Acknowledgement) GetTimestamp() uint64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
 var File_proto_proto protoreflect.FileDescriptor
 
 const file_proto_proto_rawDesc = "" +
 	"\n" +
-	"\vproto.proto\x12\aHandIn42\t\n" +
-	"\aHandIn4B\x11Z\x0fHandIn4/grpc;pbb\x06proto3"
+	"\vproto.proto\x12\aHandIn4\"F\n" +
+	"\rAccessRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\x04R\ttimestamp\"\x94\x01\n" +
+	"\vAccessReply\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\x04R\ttimestamp\x12!\n" +
+	"\frequester_id\x18\x03 \x01(\rR\vrequesterId\x12+\n" +
+	"\x11request_timestamp\x18\x04 \x01(\x04R\x10requestTimestamp\"H\n" +
+	"\x0fAcknowledgement\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\rR\x06nodeId\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\x04R\ttimestamp2\x85\x01\n" +
+	"\aHandIn4\x12A\n" +
+	"\rRequestAccess\x12\x16.HandIn4.AccessRequest\x1a\x18.HandIn4.Acknowledgement\x127\n" +
+	"\x05Reply\x12\x14.HandIn4.AccessReply\x1a\x18.HandIn4.AcknowledgementB\x11Z\x0fHandIn4/grpc;pbb\x06proto3"
 
-var file_proto_proto_goTypes = []any{}
+var (
+	file_proto_proto_rawDescOnce sync.Once
+	file_proto_proto_rawDescData []byte
+)
+
+func file_proto_proto_rawDescGZIP() []byte {
+	file_proto_proto_rawDescOnce.Do(func() {
+		file_proto_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_proto_rawDesc), len(file_proto_proto_rawDesc)))
+	})
+	return file_proto_proto_rawDescData
+}
+
+var file_proto_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_proto_goTypes = []any{
+	(*AccessRequest)(nil),   // 0: HandIn4.AccessRequest
+	(*AccessReply)(nil),     // 1: HandIn4.AccessReply
+	(*Acknowledgement)(nil), // 2: HandIn4.Acknowledgement
+}
 var file_proto_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
+	0, // 0: HandIn4.HandIn4.RequestAccess:input_type -> HandIn4.AccessRequest
+	1, // 1: HandIn4.HandIn4.Reply:input_type -> HandIn4.AccessReply
+	2, // 2: HandIn4.HandIn4.RequestAccess:output_type -> HandIn4.Acknowledgement
+	2, // 3: HandIn4.HandIn4.Reply:output_type -> HandIn4.Acknowledgement
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -47,12 +262,13 @@ func file_proto_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_proto_rawDesc), len(file_proto_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   0,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_proto_goTypes,
 		DependencyIndexes: file_proto_proto_depIdxs,
+		MessageInfos:      file_proto_proto_msgTypes,
 	}.Build()
 	File_proto_proto = out.File
 	file_proto_proto_goTypes = nil

@@ -7,7 +7,10 @@
 package pb
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,10 +18,23 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	HandIn4_RequestAccess_FullMethodName = "/HandIn4.HandIn4/RequestAccess"
+	HandIn4_Reply_FullMethodName         = "/HandIn4.HandIn4/Reply"
+)
+
 // HandIn4Client is the client API for HandIn4 service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// De funktioner, som "knuderne" kan kalde hos hinanden.
 type HandIn4Client interface {
+	// Anmoder en anden knude om adgang til den kritiske sektion.
+	// Svaret bekræfter kun modtagelsen — det giver ikke tilladelse.
+	RequestAccess(ctx context.Context, in *AccessRequest, opts ...grpc.CallOption) (*Acknowledgement, error)
+	// Giver en anden knude tilladelse til at gå ind.
+	// Dette kald kan sendes straks eller udskydes af algoritmen.
+	Reply(ctx context.Context, in *AccessReply, opts ...grpc.CallOption) (*Acknowledgement, error)
 }
 
 type handIn4Client struct {
@@ -29,10 +45,38 @@ func NewHandIn4Client(cc grpc.ClientConnInterface) HandIn4Client {
 	return &handIn4Client{cc}
 }
 
+func (c *handIn4Client) RequestAccess(ctx context.Context, in *AccessRequest, opts ...grpc.CallOption) (*Acknowledgement, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Acknowledgement)
+	err := c.cc.Invoke(ctx, HandIn4_RequestAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handIn4Client) Reply(ctx context.Context, in *AccessReply, opts ...grpc.CallOption) (*Acknowledgement, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Acknowledgement)
+	err := c.cc.Invoke(ctx, HandIn4_Reply_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HandIn4Server is the server API for HandIn4 service.
 // All implementations must embed UnimplementedHandIn4Server
 // for forward compatibility.
+//
+// De funktioner, som "knuderne" kan kalde hos hinanden.
 type HandIn4Server interface {
+	// Anmoder en anden knude om adgang til den kritiske sektion.
+	// Svaret bekræfter kun modtagelsen — det giver ikke tilladelse.
+	RequestAccess(context.Context, *AccessRequest) (*Acknowledgement, error)
+	// Giver en anden knude tilladelse til at gå ind.
+	// Dette kald kan sendes straks eller udskydes af algoritmen.
+	Reply(context.Context, *AccessReply) (*Acknowledgement, error)
 	mustEmbedUnimplementedHandIn4Server()
 }
 
@@ -43,6 +87,12 @@ type HandIn4Server interface {
 // pointer dereference when methods are called.
 type UnimplementedHandIn4Server struct{}
 
+func (UnimplementedHandIn4Server) RequestAccess(context.Context, *AccessRequest) (*Acknowledgement, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestAccess not implemented")
+}
+func (UnimplementedHandIn4Server) Reply(context.Context, *AccessReply) (*Acknowledgement, error) {
+	return nil, status.Error(codes.Unimplemented, "method Reply not implemented")
+}
 func (UnimplementedHandIn4Server) mustEmbedUnimplementedHandIn4Server() {}
 func (UnimplementedHandIn4Server) testEmbeddedByValue()                 {}
 
@@ -64,13 +114,58 @@ func RegisterHandIn4Server(s grpc.ServiceRegistrar, srv HandIn4Server) {
 	s.RegisterService(&HandIn4_ServiceDesc, srv)
 }
 
+func _HandIn4_RequestAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HandIn4Server).RequestAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HandIn4_RequestAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandIn4Server).RequestAccess(ctx, req.(*AccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HandIn4_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccessReply)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HandIn4Server).Reply(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HandIn4_Reply_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandIn4Server).Reply(ctx, req.(*AccessReply))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HandIn4_ServiceDesc is the grpc.ServiceDesc for HandIn4 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var HandIn4_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "HandIn4.HandIn4",
 	HandlerType: (*HandIn4Server)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "proto.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RequestAccess",
+			Handler:    _HandIn4_RequestAccess_Handler,
+		},
+		{
+			MethodName: "Reply",
+			Handler:    _HandIn4_Reply_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto.proto",
 }
