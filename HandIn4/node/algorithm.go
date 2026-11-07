@@ -30,6 +30,10 @@ type Node struct {
 	ID   string
 	Port string
 
+	//add field to track replies
+	replies uint32
+	cond 	*sync.Cond //wakes sendRequest when last reply is received
+
 	mu               sync.Mutex
 	numericID        uint32
 	clock            uint64
@@ -83,6 +87,8 @@ func (n *Node) BeginRequest() (Request, error) {
 		n.numericID,
 		request.Timestamp,
 	)
+
+	n.replies = 0;
 
 	return request, nil
 }
