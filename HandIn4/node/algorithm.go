@@ -299,7 +299,27 @@ func (n *Node) SendRequest() error {
 		)
 	}
 
+	//wait block
+	n.mu.Lock()
+	for n.replies < len(n.clients) {
+		n.cond.Wait()
+	}
+
+	n.state = Held
+	n.mu.Unlock()
+
+	n.EnterCriticalSection()
+	n.ExitCriticalSection()
+
 	// Funktionen venter ikke på tilladelser og giver ikke adgang.
 	// Det håndterer person 3.
 	return firstError
+}
+
+func (n *Node) EnterCriticalSection() {
+
+}
+
+func (n *Node) ExitCriticalSection() {
+	
 }
