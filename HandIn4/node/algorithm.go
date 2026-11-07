@@ -165,7 +165,7 @@ func (n *Node) Reply(
 	n.mu.Lock()
 	n.receiveTimestamp(senderClock)
 
-	isCurrent := nstate == Wanted && forRequest == n.RequestTimestamp
+	isCurrent := n.state == Wanted && forRequest == n.requestTimestamp
 	
 	if isCurrent {
 		n.replies++
