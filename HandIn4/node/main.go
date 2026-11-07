@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"bufio"
 	"strconv"
 
 	pb "handin4/grpc"
@@ -124,6 +125,16 @@ func main() {
 	}()
 
 	fmt.Println("Server is running on port", node.Port)
+
+	go func() {
+		fmt.Println("Press Enter to request the critical section")
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			if err := node.SendRequest(); err != nil {
+				log.Printf("node=%d SEND_REQUEST_ERROR: %v", node.numericID, err)
+			}
+		}
+	}()
 
 	select {}
 }

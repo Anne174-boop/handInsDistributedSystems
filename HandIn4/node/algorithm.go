@@ -31,7 +31,7 @@ type Node struct {
 	Port string
 
 	//add field to track replies
-	replies uint32
+	replies int
 	cond 	*sync.Cond //wakes sendRequest when last reply is received
 
 	mu               sync.Mutex
@@ -73,7 +73,7 @@ func (n *Node) BeginRequest() (Request, error) {
 
 	n.clock++
 	n.state = Wanted
-	n.requestTimestamp = n.
+	n.requestTimestamp = n.clock
 	
 	//reset replies before it goes out
 	n.replies = 0
@@ -317,9 +317,27 @@ func (n *Node) SendRequest() error {
 }
 
 func (n *Node) EnterCriticalSection() {
+	n.mu.Lock()
+	ts := n.requestTimestamp
+	n.mu.Unlock()
 
+	log.Printf("node=%d ENTER_CS request_timestamp=%d", n.numericID, ts)
+	time.Sleep(2 * time.Second) 
 }
 
 func (n *Node) ExitCriticalSection() {
-	
+	n.mu.Lock()
+	n.state = Released
+	pending := n.deferred
+	n.deferred = nil
+	n.mu.Unlock()
+
+	log.Printf("node=%d EXIT_CS", n.numericID)
+
+	for _, req := range pending {
+		if err := n.sendPermission(req); err != nil {
+			log.Printf("node=%d DEFERRED_REPLY_FAILED to=%d error=%v",
+				n.numericID, req.NodeID, err)
+		}
+	}
 }
