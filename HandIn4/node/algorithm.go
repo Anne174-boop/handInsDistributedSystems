@@ -177,7 +177,7 @@ func (n *Node) Reply(
 	n.mu.Unlock()
 
 	log.Printf(
-		"node=%d RECEIVE_REPLY from=%d request_timestamp=%d counted=%d",
+		"node=%d RECEIVE_REPLY from=%d request_timestamp=%d counted=%t",
 		n.numericID,
 		senderID,
 		forRequest,
@@ -322,7 +322,7 @@ func (n *Node) EnterCriticalSection() {
 	n.mu.Unlock()
 
 	log.Printf("node=%d ENTER_CS request_timestamp=%d", n.numericID, ts)
-	time.Sleep(2 * time.Second) 
+	time.Sleep(10 * time.Second) 
 }
 
 func (n *Node) ExitCriticalSection() {

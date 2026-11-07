@@ -10,25 +10,25 @@ func TestHasPriority(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "laveste tidsstempel vinder",
+			name: "lowest timestamp wins",
 			a:    Request{NodeID: 3, Timestamp: 4},
 			b:    Request{NodeID: 1, Timestamp: 5},
 			want: true,
 		},
 		{
-			name: "hoejeste tidsstempel taber",
+			name: "highest timestamp loses",
 			a:    Request{NodeID: 1, Timestamp: 6},
 			b:    Request{NodeID: 3, Timestamp: 5},
 			want: false,
 		},
 		{
-			name: "samme tidsstempel - laveste ID vinder",
+			name: "same timestamp - lowest ID wins",
 			a:    Request{NodeID: 1, Timestamp: 5},
 			b:    Request{NodeID: 2, Timestamp: 5},
 			want: true,
 		},
 		{
-			name: "samme tidsstempel - hoejeste ID taber",
+			name: "same timestamp - highest ID loses",
 			a:    Request{NodeID: 2, Timestamp: 5},
 			b:    Request{NodeID: 1, Timestamp: 5},
 			want: false,
