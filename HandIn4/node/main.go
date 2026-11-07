@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"strconv"
 
 	pb "handin4/grpc"
@@ -56,6 +57,8 @@ func main() {
 		// Nøglen er den anden knudes ID; værdien er dens klient.
 		clients: make(map[uint32]pb.HandIn4Client),
 	}
+
+	node.cond = sync.NewCond(&node.mu)
 
 	data, err := os.ReadFile("nodes.json")
 	if err != nil {

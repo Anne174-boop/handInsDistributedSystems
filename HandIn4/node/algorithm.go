@@ -63,8 +63,6 @@ func hasPriority(a, b Request) bool {
 }
 
 // Opretter en lokal anmodning.
-// Person 3 skal samtidig sørge for at nulstille registrerede
-// tilladelser, når denne funktion senere udvides.
 func (n *Node) BeginRequest() (Request, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -75,7 +73,10 @@ func (n *Node) BeginRequest() (Request, error) {
 
 	n.clock++
 	n.state = Wanted
-	n.requestTimestamp = n.clock
+	n.requestTimestamp = n.
+	
+	//reset replies before it goes out
+	n.replies = 0
 
 	request := Request{
 		NodeID:    n.numericID,
@@ -88,7 +89,6 @@ func (n *Node) BeginRequest() (Request, error) {
 		request.Timestamp,
 	)
 
-	n.replies = 0;
 
 	return request, nil
 }
@@ -148,6 +148,50 @@ func (n *Node) RequestAccess(
 	n.mu.Unlock()
 
 	// Kvitteringen er ikke en tilladelse.
+	return ack, nil
+}
+
+func (n *Node) Reply(
+	ctx context.Context,
+	in *pb.AccessReply,
+	) (*pb.Acknowledgement, error) {
+	
+	// læs beskeden og gem i variabler
+	senderID := in.GetNodeId()
+	senderClock := in.GetTimestamp()
+	forRequest := in.GetRequestTimestamp()
+
+	//opdatere shared state
+	n.mu.Lock()
+	n.receiveTimestamp(senderClock)
+
+	isCurrent := nstate == Wanted && forRequest == n.RequestTimestamp
+	
+	if isCurrent {
+		n.replies++
+		if n.replies >= len(n.clients) {
+			n.cond.Signal() //wkaes one goRoutine
+		}
+	}
+	
+	n.mu.Unlock()
+
+	log.Printf(
+		"node=%d RECEIVE_REPLY from=%d request_timestamp=%d counted=%d",
+		n.numericID,
+		senderID,
+		forRequest,
+		isCurrent,
+	)
+
+	n.mu.Lock()
+	n.clock++
+	ack := &pb.Acknowledgement{
+		NodeId:    n.numericID,
+		Timestamp: n.clock,
+	}
+	n.mu.Unlock()
+
 	return ack, nil
 }
 
