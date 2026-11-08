@@ -1,0 +1,17 @@
+Client created for node 1
+Client created for node 2
+Server is running on port 5003
+Press Enter to request the critical section
+2026/11/07 21:31:41 node=3 RECEIVE_REQUEST from=1 timestamp=1 deferred=false
+2026/11/07 21:31:41 node=3 SEND_REPLY to=1 request_timestamp=1
+2026/11/07 21:31:43 node=3 RECEIVE_REQUEST from=2 timestamp=8 deferred=false
+2026/11/07 21:31:43 node=3 SEND_REPLY to=2 request_timestamp=8
+2026/11/07 21:31:47 node=3 REQUEST timestamp=21
+2026/11/07 21:31:47 node=3 SEND_REQUEST to=1 request_timestamp=21
+2026/11/07 21:31:47 node=3 REQUEST_ACK from=1
+2026/11/07 21:31:47 node=3 SEND_REQUEST to=2 request_timestamp=21
+2026/11/07 21:31:47 node=3 REQUEST_ACK from=2
+2026/11/07 21:31:51 node=3 RECEIVE_REPLY from=1 request_timestamp=21 counted=true
+2026/11/07 21:31:58 node=3 RECEIVE_REPLY from=2 request_timestamp=21 counted=true
+2026/11/07 21:31:58 node=3 ENTER_CS request_timestamp=21
+2026/11/07 21:32:08 node=3 EXIT_CS

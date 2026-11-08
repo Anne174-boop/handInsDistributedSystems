@@ -30,6 +30,10 @@ type Node struct {
 	ID   string
 	Port string
 
+	//add field to track replies
+	replies int
+	cond 	*sync.Cond //wakes sendRequest when last reply is received
+
 	mu               sync.Mutex
 	numericID        uint32
 	clock            uint64
@@ -59,8 +63,6 @@ func hasPriority(a, b Request) bool {
 }
 
 // Opretter en lokal anmodning.
-// Person 3 skal samtidig sørge for at nulstille registrerede
-// tilladelser, når denne funktion senere udvides.
 func (n *Node) BeginRequest() (Request, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -72,6 +74,9 @@ func (n *Node) BeginRequest() (Request, error) {
 	n.clock++
 	n.state = Wanted
 	n.requestTimestamp = n.clock
+	
+	//reset replies before it goes out
+	n.replies = 0
 
 	request := Request{
 		NodeID:    n.numericID,
@@ -83,6 +88,7 @@ func (n *Node) BeginRequest() (Request, error) {
 		n.numericID,
 		request.Timestamp,
 	)
+
 
 	return request, nil
 }
@@ -142,6 +148,50 @@ func (n *Node) RequestAccess(
 	n.mu.Unlock()
 
 	// Kvitteringen er ikke en tilladelse.
+	return ack, nil
+}
+
+func (n *Node) Reply(
+	ctx context.Context,
+	in *pb.AccessReply,
+	) (*pb.Acknowledgement, error) {
+	
+	// læs beskeden og gem i variabler
+	senderID := in.GetNodeId()
+	senderClock := in.GetTimestamp()
+	forRequest := in.GetRequestTimestamp()
+
+	//opdatere shared state
+	n.mu.Lock()
+	n.receiveTimestamp(senderClock)
+
+	isCurrent := n.state == Wanted && forRequest == n.requestTimestamp
+	
+	if isCurrent {
+		n.replies++
+		if n.replies >= len(n.clients) {
+			n.cond.Signal() //wkaes one goRoutine
+		}
+	}
+	
+	n.mu.Unlock()
+
+	log.Printf(
+		"node=%d RECEIVE_REPLY from=%d request_timestamp=%d counted=%t",
+		n.numericID,
+		senderID,
+		forRequest,
+		isCurrent,
+	)
+
+	n.mu.Lock()
+	n.clock++
+	ack := &pb.Acknowledgement{
+		NodeId:    n.numericID,
+		Timestamp: n.clock,
+	}
+	n.mu.Unlock()
+
 	return ack, nil
 }
 
@@ -249,7 +299,45 @@ func (n *Node) SendRequest() error {
 		)
 	}
 
+	//wait block
+	n.mu.Lock()
+	for n.replies < len(n.clients) {
+		n.cond.Wait()
+	}
+
+	n.state = Held
+	n.mu.Unlock()
+
+	n.EnterCriticalSection()
+	n.ExitCriticalSection()
+
 	// Funktionen venter ikke på tilladelser og giver ikke adgang.
 	// Det håndterer person 3.
 	return firstError
+}
+
+func (n *Node) EnterCriticalSection() {
+	n.mu.Lock()
+	ts := n.requestTimestamp
+	n.mu.Unlock()
+
+	log.Printf("node=%d ENTER_CS request_timestamp=%d", n.numericID, ts)
+	time.Sleep(10 * time.Second) 
+}
+
+func (n *Node) ExitCriticalSection() {
+	n.mu.Lock()
+	n.state = Released
+	pending := n.deferred
+	n.deferred = nil
+	n.mu.Unlock()
+
+	log.Printf("node=%d EXIT_CS", n.numericID)
+
+	for _, req := range pending {
+		if err := n.sendPermission(req); err != nil {
+			log.Printf("node=%d DEFERRED_REPLY_FAILED to=%d error=%v",
+				n.numericID, req.NodeID, err)
+		}
+	}
 }

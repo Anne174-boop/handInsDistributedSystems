@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
+	"bufio"
 	"strconv"
 
 	pb "handin4/grpc"
@@ -56,6 +58,8 @@ func main() {
 		// Nøglen er den anden knudes ID; værdien er dens klient.
 		clients: make(map[uint32]pb.HandIn4Client),
 	}
+
+	node.cond = sync.NewCond(&node.mu)
 
 	data, err := os.ReadFile("nodes.json")
 	if err != nil {
@@ -121,6 +125,16 @@ func main() {
 	}()
 
 	fmt.Println("Server is running on port", node.Port)
+
+	go func() {
+		fmt.Println("Press Enter to request the critical section")
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			if err := node.SendRequest(); err != nil {
+				log.Printf("node=%d SEND_REQUEST_ERROR: %v", node.numericID, err)
+			}
+		}
+	}()
 
 	select {}
 }
