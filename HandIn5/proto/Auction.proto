@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auction;
 
-option go_package = "HandIn5/grpc;pb";
+option go_package = "HandIn5/proto;pb";
 
 service AuctionService {
     rpc Bid (BidRequest) returns (BidResponse);
@@ -10,6 +10,8 @@ service AuctionService {
     rpc Result (ResultRequest) returns (ResultResponse);
 
     rpc ReplicateBid (ReplicationRequest) returns (ReplicationResponse);
+    
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message BidRequest {
@@ -32,10 +34,24 @@ message ResultResponse {
 }
 
 message ReplicationRequest {
-    string bidder_id = 1;
-    int32 amount = 2;
+    reserved 1,2; //feltnummerne som bliver brugt til bitter_id og amount
+    
+    uint32 primary_id = 3;
+    uint64 version = 4;
+    bytes Snapshot = 5;
+
 }
 
 message ReplicationResponse {
     bool success = 1;
 }
+
+
+message HeartbeatRequest{
+
+}
+
+message HeartbeatResponse{
+
+}
+
