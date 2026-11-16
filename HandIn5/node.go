@@ -3,10 +3,11 @@ package main
 import (
 	pb "HandIn5/proto"
 	"context"
-	"fmt"
-	"sync"
-
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"sync"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,6 +33,7 @@ type node struct {
 	failureDetector  *FailureDetector
 	version          uint64 //den version for snapshot der er installeret
 	installedPrimary uint32 // den som sendte den installerede snapshot?
+	peers            Peers
 }
 
 func NewNode(id int, role Role, auction *Auction) *node {
@@ -63,31 +65,41 @@ func (n *node) Bid(
 	ctx context.Context,
 	req *pb.BidRequest,
 ) (*pb.BidResponse, error) {
+	if n.failureDetector.PrimaryID() != uint32(n.id) {
+		return nil, status.Error(codes.FailedPrecondition, "ikke primary")
+	}
+	bidderID, err := strconv.Atoi(req.BidderId)
+	if err != nil {
+		return &pb.BidResponse{Status: "exception"}, nil
+	}
 	n.mu.Lock()
 
 	outcome := n.auction.Bid(
 		int(req.Amount),
-		1,
-		1,
+		bidderID,
+		bidderID*1_000_000+int(req.RequestId),
 	)
+	n.version++
+	err = n.peers.ReplicateToBackups(ctx, n.failureDetector, n.version,
+		Snapshot(n.auction), 500*time.Millisecond, 100*time.Millisecond)
 
 	n.mu.Unlock()
 
-	var status string
+	var statusText string
 
 	switch outcome {
 	case Success:
-		status = "success"
+		statusText = "success"
 
 	case Fail:
-		status = "fail"
+		statusText = "fail"
 
 	case Exception:
-		status = "exception"
+		statusText = "exception"
 	}
 
 	return &pb.BidResponse{
-		Status: status,
+		Status: statusText,
 	}, nil
 }
 
