@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"sync"
-	"bufio"
 	"strconv"
+	"sync"
 
 	pb "handin4/grpc"
 

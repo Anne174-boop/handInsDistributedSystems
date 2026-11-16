@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package auction;
+
+option go_package = "HandIn5/grpc;pb";
+
+service AuctionService {
+    rpc Bid (BidRequest) returns (BidResponse);
+
+    rpc Result (ResultRequest) returns (ResultResponse);
+
+    rpc ReplicateBid (ReplicationRequest) returns (ReplicationResponse);
+}
+
+message BidRequest {
+    string bidder_id = 1;
+    int32 amount = 2;
+}
+
+message BidResponse {
+    string status = 1;
+}
+
+message ResultRequest {
+
+}
+
+message ResultResponse {
+    bool auction_over = 1;
+    string winner = 2;
+    int32 highest_bid = 3;
+}
+
+message ReplicationRequest {
+    string bidder_id = 1;
+    int32 amount = 2;
+}
+
+message ReplicationResponse {
+    bool success = 1;
+}
