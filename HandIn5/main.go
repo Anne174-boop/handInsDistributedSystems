@@ -2,6 +2,7 @@ package main
 
 import (
 	pb "HandIn5/proto"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // starter én node (flag: --id, --port, --peers)
@@ -44,11 +46,39 @@ func main() {
 		fmt.Printf("Auction ongoing. Highest bid: %d by %d\n", bid, winner)
 	}
 
-	node1 := NewNode(1, Primary, a)
+	// Opret en gRPC-klient til hver af de andre noder.
+	peers := make(Peers)
+	for peerID, address := range addresses {
+		if peerID == selfID {
+			continue
+		}
+
+		conn, err := grpc.NewClient(
+			address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err != nil {
+			log.Fatalf("opret gRPC-klient til node %d: %v", peerID, err)
+		}
+		defer conn.Close()
+
+		peers[peerID] = pb.NewAuctionServiceClient(conn)
+	}
+
+	// Node 1 starter som primary.
+	role := Replica
+	if selfID == 1 {
+		role = Primary
+	}
+
+	node1 := NewNode(*id, role, a)
+	node1.peers = peers
+	detector := NEWfailureDetector(selfID, peers, 200*time.Millisecond, time.Second)
+	node1.failureDetector = detector
 
 	fmt.Print("Node created: ", node1.id)
 
-	lis, err := net.Listen("tcp", ":5001")
+	lis, err := net.Listen("tcp", addresses[selfID])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +89,7 @@ func main() {
 		grpcServer,
 		node1,
 	)
-
+	go detector.run(context.Background())
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
