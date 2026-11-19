@@ -18,13 +18,13 @@ import (
 
 func main() {
 	id := flag.Int("id", 0, "Node-id: 1, 2 eller 3")
-	deadline := time.Now().Add(1200 * time.Second).Unix()
+	deadline := time.Now().Add(120 * time.Second).Unix()
 	asClient := flag.Bool("client", false, "Kør som klient i stedet for node")
-	newDeadline := flag.Bool("newdeadline", false, "Print en deadline 1200 sek. frem og afslut")
+	newDeadline := flag.Bool("newdeadline", false, "Print en deadline 120 sek. frem og afslut")
 	flag.Parse()
 
 	if *newDeadline {
-		fmt.Println(time.Now().Add(1200 * time.Second).Unix())
+		fmt.Println(time.Now().Add(120 * time.Second).Unix())
 		return
 	}
 
