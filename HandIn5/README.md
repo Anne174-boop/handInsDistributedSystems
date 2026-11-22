@@ -44,12 +44,18 @@ cd HandIn5
 
 ### To run the program
 
-Open one terminal per node, all in the project root of HandIn5. Start all nodes before running the client:
+Before running the nodes open a terminal in the project root of HandIn5, and generate a timestamp with the command:
 
 ```bash
-go run . -id 1
-go run . -id 2
-go run . -id 3
+go run . -newdeadline
+```
+
+Open one terminal per node, all in the project root of HandIn5. Start all nodes with the generated deadline before running the client:
+
+```bash
+go run . -id 1 -deadline #generated deadline here
+go run . -id 2 -deadline #generated deadline here
+go run . -id 3 -deadline #generated deadline here
 ```
 
 
@@ -58,7 +64,7 @@ go run . -id 3
 In a new terminal, from the project root, start the client (connects to node 1 on localhost:5001)::
 
 ```bash
-go run -client
+go run . -client
 ```
 
 
